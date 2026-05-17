@@ -450,3 +450,51 @@ plt.ylabel("y")
 
 plt.show()
 ```
+
+# Hypothesis Testing (Z-Test for Proportion)
+
+```python
+import numpy as np
+from scipy.stats import norm
+
+# Sample data
+n = 500                 # sample size
+x = 320                 # satisfied customers
+
+# Sample proportion
+p_hat = x / n
+
+# Hypothesized population proportion
+p0 = 0.55
+
+# Significance level
+alpha = 0.05
+
+# Z-test statistic
+Z = (p_hat - p0) / np.sqrt((p0 * (1 - p0)) / n)
+
+# Two-tailed p-value
+p_value = 2 * (1 - norm.cdf(abs(Z)))
+
+# Critical value
+z_critical = norm.ppf(1 - alpha/2)
+
+# Output
+print("Sample Proportion:", round(p_hat, 4))
+print("Z statistic:", round(Z, 4))
+print("p-value:", round(p_value, 6))
+print("Critical value:", round(z_critical, 2))
+
+# Decision using critical value
+if abs(Z) > z_critical:
+    print("Reject H0")
+else:
+    print("Fail to reject H0")
+
+# Decision using p-value
+if p_value < alpha:
+    print("Reject H0")
+else:
+    print("Fail to reject H0")
+```
+
