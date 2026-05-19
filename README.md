@@ -1090,7 +1090,91 @@ public class Main extends JFrame {
 ## Q9. Hospital Appointment Booking System
 
 ```java
-// Paste Q9 Java code here
+package com.hospital.appointments;
+import javax.swing.*;
+import java.awt.*;
+import java.util.*;
+interface Schedulable {
+    void bookAppointment(Patient p, String timeSlot) throws Exception;
+}
+class Patient {
+    private final String patientId, name;
+    public Patient(String patientId, String name) {
+        if (patientId == null || name == null)
+            throw new NullPointerException("Patient info cannot be null.");
+        this.patientId = patientId; this.name = name;
+    }
+    public String getPatientId() { return patientId; }
+    public String getName() { return name; }
+}
+class Appointment {
+    private final Patient patient;
+    private final String timeSlot;
+    public Appointment(Patient p, String slot) { this.patient = p; this.timeSlot = slot; }
+    @Override public String toString() {
+        return "[" + timeSlot + "] " + patient.getName() + " (ID:" + patient.getPatientId() + ")";
+    }
+}
+class Doctor implements Schedulable {
+    private final String name;
+    private final List&lt;Appointment&gt; appointments = new ArrayList&lt;&gt;();
+    private final Set&lt;String&gt; bookedSlots = new HashSet&lt;&gt;();
+    public Doctor(String name) { this.name = name; }
+    @Override
+    public void bookAppointment(Patient p, String timeSlot) throws Exception {
+        if (p == null) throw new NullPointerException("Patient info is null.");
+        if (timeSlot == null || !timeSlot.matches("\d{2}:\d{2}"))
+            throw new IllegalArgumentException("Invalid time slot format. Use HH:MM.");
+        if (bookedSlots.contains(timeSlot))
+            throw new IllegalStateException("Overlapping appointment at " + timeSlot);
+        bookedSlots.add(timeSlot);
+        appointments.add(new Appointment(p, timeSlot));
+    }
+    public String listAppointments() {
+        if (appointments.isEmpty()) return "No appointments for Dr. " + name;
+        StringBuilder sb = new StringBuilder("Dr. " + name + "'s Appointments:
+");
+"));
+    }
+        appointments.forEach(a -&gt; sb.append(a).append("
+        return sb.toString();
+}
+public class Main extends JFrame {
+    private JTextField doctorF, patIdF, patNameF, slotF;
+    private JTextArea out;
+    private final Map&lt;String, Doctor&gt; doctors = new HashMap&lt;&gt;();
+    public Main() {
+        super("Hospital Appointment Booking System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(520,460);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(5,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Book Appointment"));
+        form.add(new JLabel("Doctor Name:")); doctorF = new JTextField(); form.add(doctorF);
+        form.add(new JLabel("Patient ID:")); patIdF = new JTextField(); form.add(patIdF);
+        form.add(new JLabel("Patient Name:")); patNameF = new JTextField(); form.add(patNameF);
+        form.add(new JLabel("Time Slot (HH:MM):")); slotF = new JTextField(); form.add(slotF);
+        JButton bookBtn = new JButton("Book");
+        JButton showBtn = new JButton("Show Appointments");
+        JButton exitBtn = new JButton("Cancel / Exit");
+        form.add(bookBtn); form.add(showBtn);
+        out = new JTextArea(12,42);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JPanel btnP = new JPanel(); btnP.add(exitBtn);
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnP, BorderLayout.SOUTH);
+        bookBtn.addActionListener(e -&gt; {
+            try {
+                String dName = doctorF.getText().trim();
+                doctors.putIfAbsent(dName, new Doctor(dName));
+                Doctor d = doctors.get(dName);
+                Patient p = new Patient(patIdF.getText().trim(), patNameF.getText().trim());
+                d.bookAppointment(p, slotF.getText().trim());
+                out.append("Appointment booked: " + slotF.getText().trim() + "
+");
+}
 ```
 
 ---
