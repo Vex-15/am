@@ -1,500 +1,1182 @@
-# Python Statistics & Machine Learning Lab Projects
+# Java Practicals – All 20 Programs
 
----
+## Q1. University Student Management System
 
-# 1. Matrix Operations using NumPy
+```java
+package com.university.management;
 
-```python
-import numpy as np
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
 
-# Define matrices
-A = np.array([[1, 2],
-              [3, 4]])
+interface ExamEligibility {
+    boolean isEligibleForExam();
+}
 
-B = np.array([[5, 6],
-              [7, 8]])
+interface ScholarshipEligibility {
+    boolean isEligibleForScholarship();
+}
 
-# Matrix Addition
-print("Matrix Addition:")
-print(A + B)
+class Department {
+    private final String deptName;
+    private static int deptCount = 0;
 
-# Matrix Multiplication
-print("\nMatrix Multiplication:")
-print(np.dot(A, B))
+    public Department(String deptName) {
+        this.deptName = deptName;
+        deptCount++;
+    }
 
-# Determinant
-print("\nDeterminant of A:")
-print(np.linalg.det(A))
+    public String getDeptName() {
+        return deptName;
+    }
 
-# Inverse
-print("\nInverse of A:")
-print(np.linalg.inv(A))
+    public static int getDeptCount() {
+        return deptCount;
+    }
+}
 
-# Eigenvalues and Eigenvectors
-eigenvalues, eigenvectors = np.linalg.eig(A)
+class Course {
+    private final String courseName;
+    private final int credits;
 
-print("\nEigenvalues:")
-print(eigenvalues)
+    public Course(String courseName, int credits) {
+        if (credits < 0)
+            throw new IllegalArgumentException("Credits cannot be negative.");
 
-print("\nEigenvectors:")
-print(eigenvectors)
+        this.courseName = courseName;
+        this.credits = credits;
+    }
+
+    public String getCourseName() {
+        return courseName;
+    }
+
+    public int getCredits() {
+        return credits;
+    }
+}
+
+class Student implements ExamEligibility, ScholarshipEligibility {
+
+    private final String name;
+    private final int rollNo;
+    private double gpa;
+    private final int attendancePercent;
+
+    private static int studentCount = 0;
+
+    public Student(String name, int rollNo, double gpa, int attendancePercent) {
+
+        if (gpa < 0 || gpa > 10)
+            throw new IllegalArgumentException("GPA must be between 0 and 10.");
+
+        if (attendancePercent < 0 || attendancePercent > 100)
+            throw new IllegalArgumentException("Attendance must be 0-100%.");
+
+        this.name = name;
+        this.rollNo = rollNo;
+        this.gpa = gpa;
+        this.attendancePercent = attendancePercent;
+
+        studentCount++;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getRollNo() {
+        return rollNo;
+    }
+
+    public double getGpa() {
+        return gpa;
+    }
+
+    public static int getStudentCount() {
+        return studentCount;
+    }
+
+    public double calculateGPA(double[] grades) {
+
+        if (grades == null || grades.length == 0)
+            throw new IllegalArgumentException("Grades array cannot be empty.");
+
+        double sum = 0;
+
+        for (double g : grades) {
+
+            if (g < 0 || g > 100)
+                throw new IllegalArgumentException("Grade out of range: " + g);
+
+            sum += g;
+        }
+
+        this.gpa = (sum / grades.length) / 10.0;
+        return this.gpa;
+    }
+
+    @Override
+    public boolean isEligibleForExam() {
+        return attendancePercent >= 75;
+    }
+
+    @Override
+    public boolean isEligibleForScholarship() {
+        return gpa >= 8.5 && attendancePercent >= 90;
+    }
+
+    @Override
+    public String toString() {
+
+        return "Student[name=" + name +
+                ", rollNo=" + rollNo +
+                ", GPA=" + String.format("%.2f", gpa) +
+                ", ExamEligible=" + isEligibleForExam() +
+                ", Scholarship=" + isEligibleForScholarship() +
+                "]";
+    }
+}
+
+public class Main extends JFrame {
+
+    private JTextField nameField, rollField, gpaField, attendField;
+    private JTextArea outputArea;
+
+    public Main() {
+
+        super("University Student Management System");
+
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout(10, 10));
+        setSize(550, 480);
+
+        JPanel form = new JPanel(new GridLayout(5, 2, 8, 8));
+
+        form.setBorder(BorderFactory.createTitledBorder("Student Details"));
+
+        form.add(new JLabel("Name:"));
+        nameField = new JTextField();
+        form.add(nameField);
+
+        form.add(new JLabel("Roll No:"));
+        rollField = new JTextField();
+        form.add(rollField);
+
+        form.add(new JLabel("GPA (0-10):"));
+        gpaField = new JTextField();
+        form.add(gpaField);
+
+        form.add(new JLabel("Attendance (%):"));
+        attendField = new JTextField();
+        form.add(attendField);
+
+        JButton submit = new JButton("Submit");
+        JButton cancel = new JButton("Cancel / Exit");
+
+        form.add(submit);
+        form.add(cancel);
+
+        outputArea = new JTextArea(10, 40);
+        outputArea.setEditable(false);
+
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(outputArea), BorderLayout.CENTER);
+
+        submit.addActionListener(e -> handleSubmit());
+
+        cancel.addActionListener(e -> System.exit(0));
+
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+
+    private void handleSubmit() {
+
+        try {
+
+            String name = nameField.getText().trim();
+
+            int roll = Integer.parseInt(rollField.getText().trim());
+
+            double gpa = Double.parseDouble(gpaField.getText().trim());
+
+            int attend = Integer.parseInt(attendField.getText().trim());
+
+            Student s = new Student(name, roll, gpa, attend);
+
+            saveToDatabase(s);
+
+            outputArea.setText(s.toString());
+
+        } catch (IllegalArgumentException ex) {
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    ex.getMessage(),
+                    "Input Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
+    }
+
+    private void saveToDatabase(Student s) {
+
+        try (
+                Connection con = DriverManager.getConnection(
+                        "jdbc:mysql://localhost:3306/university",
+                        "root",
+                        "password"
+                );
+
+                PreparedStatement ps = con.prepareStatement(
+                        "INSERT INTO students(name,roll_no,gpa,attendance) VALUES(?,?,?,?)"
+                )
+        ) {
+
+            ps.setString(1, s.getName());
+            ps.setInt(2, s.getRollNo());
+            ps.setDouble(3, s.getGpa());
+
+            ps.executeUpdate();
+
+        } catch (SQLException ex) {
+
+            outputArea.append("\n[DB] " + ex.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(Main::new);
+    }
+}
 ```
 
 ---
 
-# 2. Principal Component Analysis (PCA)
+## Q2. Online Shopping System
 
-```python
-import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+```java
+// Paste Q2 Java code here
+package com.shopping.cart;
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+interface Discountable {
+    double applyDiscount(double percent);
+}
+class Product implements Discountable {
+    private final String name;
+    private double price;
+    private int quantity;
+    private static int productCount = 0;
+    public Product(String name, double price, int quantity) {
+        if (price &lt; 0) throw new IllegalArgumentException("Price cannot be negative.");
+        if (quantity &lt; 0) throw new IllegalArgumentException("Quantity cannot be negative.");
+        this.name = name;
+        this.price = price;
+        this.quantity = quantity;
+        productCount++;
+    }
+    public String getName() { return name; }
+    public double getPrice() { return price; }
+    public int getQuantity() { return quantity; }
+    public static int getProductCount() { return productCount; }
+    @Override
+    public double applyDiscount(double percent) {
+        if (percent &lt; 0 || percent &gt; 100)
+            throw new IllegalArgumentException("Invalid discount percent.");
+        price = price - (price * percent / 100);
+        return price;
+    }
+    public double totalCost() { return price * quantity; }
+    @Override public String toString() {
+        return name + " x" + quantity + " @ Rs." + String.format("%.2f", price)
+               + " = Rs." + String.format("%.2f", totalCost());
+    }
+}
+class Cart {
+    private final java.util.List&lt;Product&gt; items = new java.util.ArrayList&lt;&gt;();
+    public void addProduct(Product p) { items.add(p); }
+    public double calculateBill() {
+        return items.stream().mapToDouble(Product::totalCost).sum();
+    }
+    public String checkout() {
+        StringBuilder sb = new StringBuilder("---- BILL ---
+");
+");
+        for (Product p : items) sb.append(p).append("
+        sb.append("-------------
+Total: Rs.").append(String.format("%.2f", calculateBill()));
+        return sb.toString();
+    }
+}
+public class Main extends JFrame {
+    private JTextField nameF, priceF, qtyF, discF;
+    private JTextArea out;
+    private final Cart cart = new Cart();
+    public Main() {
+        super("Online Shopping System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(520, 480);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(5,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Add Product to Cart"));
+        form.add(new JLabel("Product Name:")); nameF = new JTextField(); form.add(nameF);
+        form.add(new JLabel("Price (Rs):")); priceF = new JTextField(); form.add(priceF);
+        form.add(new JLabel("Quantity:")); qtyF = new JTextField(); form.add(qtyF);
+        form.add(new JLabel("Discount (%):")); discF = new JTextField("0"); form.add(discF);
+        JButton addBtn = new JButton("Add to Cart");
+        JButton checkoutBtn = new JButton("Checkout");
+        JButton cancelBtn = new JButton("Cancel / Exit");
+        form.add(addBtn); form.add(checkoutBtn);
+        out = new JTextArea(12,40);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JPanel btnPanel = new JPanel(); btnPanel.add(cancelBtn);
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnPanel, BorderLayout.SOUTH);
+        addBtn.addActionListener(e -&gt; {
+            try {
+                Product p = new Product(nameF.getText().trim(),
+                        Double.parseDouble(priceF.getText().trim()),
+                        Integer.parseInt(qtyF.getText().trim()));
+                double disc = Double.parseDouble(discF.getText().trim());
+                if (disc &gt; 0) p.applyDiscount(disc);
+                cart.addProduct(p);
+                out.append("Added: " + p + "
+");
+}
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        checkoutBtn.addActionListener(e -&gt; out.setText(cart.checkout()));
+        cancelBtn.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(Main::new);
+    }
 
-# Sample dataset
-X = np.array([[2.5, 2.4],
-              [0.5, 0.7],
-              [2.2, 2.9],
-              [1.9, 2.2],
-              [3.1, 3.0],
-              [2.3, 2.7],
-              [2, 1.6],
-              [1, 1.1],
-              [1.5, 1.6],
-              [1.1, 0.9]])
-
-# Standardize data
-X_std = StandardScaler().fit_transform(X)
-
-# Manual PCA
-cov_matrix = np.cov(X_std.T)
-
-eigenvalues, eigenvectors = np.linalg.eig(cov_matrix)
-
-sorted_index = np.argsort(eigenvalues)[::-1]
-sorted_eigenvectors = eigenvectors[:, sorted_index]
-
-eigenvector_subset = sorted_eigenvectors[:, 0:2]
-
-X_reduced = np.dot(X_std, eigenvector_subset)
-
-print("Manual PCA Result:")
-print(X_reduced)
-
-# PCA using sklearn
-pca = PCA(n_components=2)
-
-X_pca = pca.fit_transform(X_std)
-
-print("\nSklearn PCA Result:")
-print(X_pca)
 ```
 
 ---
 
-# 3. Naive Bayes Spam Classifier
+## Q3. Railway Reservation System
 
-```python
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import train_test_split
-
-# Sample dataset
-emails = [
-    "Win money now",
-    "Claim your free prize",
-    "Meeting at 10 am",
-    "Project submission tomorrow",
-    "Free lottery ticket",
-    "Important office update"
-]
-
-labels = [1, 1, 0, 0, 1, 0]
-
-# Convert text into numerical data
-vectorizer = CountVectorizer()
-
-X = vectorizer.fit_transform(emails)
-
-# Split data
-X_train, X_test, y_train, y_test = train_test_split(
-    X, labels, test_size=0.3, random_state=42
-)
-
-# Train model
-model = MultinomialNB()
-
-model.fit(X_train, y_train)
-
-# Test
-test_email = ["Free money prize"]
-
-test_vector = vectorizer.transform(test_email)
-
-prediction = model.predict(test_vector)
-
-print("Spam" if prediction[0] == 1 else "Not Spam")
+```java
+package com.railway.reservation;
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+interface Reservable {
+    boolean book(String passengerName, int age);
+    boolean cancel(int ticketId);
+}
+class Passenger {
+    private final String name;
+    private final int age;
+    public Passenger(String name, int age) {
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Passenger name missing.");
+        if (age &lt; 1 || age &gt; 120) throw new IllegalArgumentException("Invalid age: " + age);
+        this.name = name; this.age = age;
+    }
+    public String getName() { return name; }
+    public int getAge() { return age; }
+}
+class Ticket {
+    private static int counter = 1000;
+    private final int ticketId;
+    private final Passenger passenger;
+    private final double fare;
+    public Ticket(Passenger p, double fare) {
+        this.ticketId = ++counter;
+        this.passenger = p;
+        this.fare = fare;
+    }
+    public int getTicketId() { return ticketId; }
+    @Override public String toString() {
+        return "Ticket#" + ticketId + " | " + passenger.getName()
+               + " (age " + passenger.getAge() + ") | Fare: Rs." + String.format("%.2f", fare);
+    }
+}
+class Train implements Reservable {
+    private final String trainName;
+    private final int totalSeats;
+    private final java.util.List&lt;Ticket&gt; tickets = new java.util.ArrayList&lt;&gt;();
+    private static final double BASE_FARE = 250.0;
+    public Train(String trainName, int totalSeats) {
+        this.trainName = trainName;
+        this.totalSeats = totalSeats;
+    }
+    public int availableSeats() { return totalSeats - tickets.size(); }
+    @Override
+    public boolean book(String name, int age) {
+        if (availableSeats() &lt;= 0) throw new IllegalStateException("Overbooking: No seats available.");
+        Passenger p = new Passenger(name, age);
+        double fare = age &lt; 5 ? 0 : age &gt;= 60 ? BASE_FARE * 0.5 : BASE_FARE;
+        tickets.add(new Ticket(p, fare));
+    }
+        return true;
+    @Override
+    public boolean cancel(int ticketId) {
+        return tickets.removeIf(t -&gt; t.getTicketId() == ticketId);
+    }
+    public String listTickets() {
+        if (tickets.isEmpty()) return "No bookings yet.";
+        StringBuilder sb = new StringBuilder("Train: " + trainName + "
+");
+"));
+    }
+}
+        tickets.forEach(t -&gt; sb.append(t).append("
+        sb.append("Available Seats: ").append(availableSeats());
+        return sb.toString();
+public class Main extends JFrame {
+    private JTextField nameF, ageF, cancelF;
+    private JTextArea out;
+    private final Train train = new Train("Deccan Express", 5);
+    public Main() {
+        super("Railway Reservation System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(540, 500);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(4,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Book / Cancel Ticket"));
+        form.add(new JLabel("Passenger Name:")); nameF = new JTextField(); form.add(nameF);
+        form.add(new JLabel("Age:")); ageF = new JTextField(); form.add(ageF);
+        form.add(new JLabel("Cancel Ticket ID:")); cancelF = new JTextField(); form.add(cancelF);
+        JButton bookBtn = new JButton("Book");
+        JButton cancelBtn = new JButton("Cancel Ticket");
+        JButton showBtn = new JButton("Show All");
+        JButton exitBtn = new JButton("Exit");
+        form.add(bookBtn); form.add(cancelBtn);
+        out = new JTextArea(14,42);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JPanel btnPanel = new JPanel();
+        btnPanel.add(showBtn); btnPanel.add(exitBtn);
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnPanel, BorderLayout.SOUTH);
+        bookBtn.addActionListener(e -&gt; {
+            try {
+                train.book(nameF.getText().trim(), Integer.parseInt(ageF.getText().trim()));
+                out.append("Booking successful!
+");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        cancelBtn.addActionListener(e -&gt; {
+            try {
+                boolean ok = train.cancel(Integer.parseInt(cancelF.getText().trim()));
+                out.append(ok ? "Ticket cancelled.
+" : "Ticket not found.
+");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        showBtn.addActionListener(e -&gt; out.setText(train.listTickets()));
+        exitBtn.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+    public static void main(String[] args) { SwingUtilities.invokeLater(Main::new); }
+}
 ```
 
 ---
 
-# 4. Coin Toss & Poisson Simulation
+## Q4. Employee Payroll Management System
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import poisson
+```java
+// Paste Q4 Java code here
+package com.company.hr;
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+interface Payable {
+    double calculateSalary();
+}
+class Employee implements Payable {
+    protected final String name;
+    protected final int employeeId;
+    protected double basicSalary;
+    protected int workingDays;
+    private static int empCount = 0;
+    public static final int TOTAL_DAYS = 30;
+    public Employee(String name, int employeeId, double basicSalary, int workingDays) {
+        if (basicSalary &lt; 0) throw new IllegalArgumentException("Salary cannot be negative.");
+        if (workingDays &lt; 0 || workingDays &gt; TOTAL_DAYS)
+            throw new IllegalArgumentException("Invalid working days: " + workingDays);
+        this.name = name; this.employeeId = employeeId;
+        this.basicSalary = basicSalary; this.workingDays = workingDays;
+        empCount++;
+    }
+    @Override public double calculateSalary() { return (basicSalary / TOTAL_DAYS) * workingDays; }
+    public static int getEmpCount() { return empCount; }
+    @Override public String toString() {
+        return "Employee[" + name + ", ID=" + employeeId
+               + ", NetPay=Rs." + String.format("%.2f", calculateSalary()) + "]";
+    }
+}
+class Manager extends Employee {
+    private final double incentive;
+    public Manager(String name, int id, double basic, int days, double incentive) {
+        super(name, id, basic, days);
+        this.incentive = incentive;
+    }
+    @Override public double calculateSalary() { return super.calculateSalary() + incentive; }
+    @Override public String toString() {
+        return "Manager[" + name + ", ID=" + employeeId
+               + ", NetPay=Rs." + String.format("%.2f", calculateSalary()) + " (incl. incentive Rs." + incentive + ")]";
+    }
+}
+class Clerk extends Employee {
+    private static final double OVERTIME_RATE = 150.0;
+    private final int overtimeHours;
+    public Clerk(String name, int id, double basic, int days, int overtimeHours) {
+        super(name, id, basic, days);
+        this.overtimeHours = overtimeHours;
+    }
+    @Override public double calculateSalary() {
+        return super.calculateSalary() + (overtimeHours * OVERTIME_RATE);
+    }
+    @Override public String toString() {
+    }
+        return "Clerk[" + name + ", ID=" + employeeId
+               + ", NetPay=Rs." + String.format("%.2f", calculateSalary()) + "]";
+}
+public class Main extends JFrame {
+    private JTextField nameF, idF, basicF, daysF, extraF;
+    private JComboBox&lt;String&gt; typeCombo;
+    private JTextArea out;
+    public Main() {
+        super("Employee Payroll Management System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(540, 500);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(7,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Employee Details"));
+        form.add(new JLabel("Name:")); nameF = new JTextField(); form.add(nameF);
+        form.add(new JLabel("Employee ID:")); idF = new JTextField(); form.add(idF);
+        form.add(new JLabel("Basic Salary:")); basicF = new JTextField(); form.add(basicF);
+        form.add(new JLabel("Working Days:")); daysF = new JTextField(); form.add(daysF);
+        form.add(new JLabel("Incentive/OT Hours:")); extraF = new JTextField("0"); form.add(extraF);
+        form.add(new JLabel("Type:"));
+        typeCombo = new JComboBox&lt;&gt;(new String[]{"Employee", "Manager", "Clerk"});
+        form.add(typeCombo);
+        JButton submit = new JButton("Submit");
+        JButton cancel = new JButton("Cancel / Exit");
+        form.add(submit); form.add(cancel);
+        out = new JTextArea(10,42);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        submit.addActionListener(e -&gt; {
+            try {
+                String name = nameF.getText().trim();
+                int id = Integer.parseInt(idF.getText().trim());
+                double basic = Double.parseDouble(basicF.getText().trim());
+                int days = Integer.parseInt(daysF.getText().trim());
+                double extra = Double.parseDouble(extraF.getText().trim());
+                String type = (String) typeCombo.getSelectedItem();
+                Employee emp;
+                if ("Manager".equals(type)) emp = new Manager(name, id, basic, days, extra);
+                else if ("Clerk".equals(type)) emp = new Clerk(name, id, basic, days, (int)extra);
+                else emp = new Employee(name, id, basic, days);
+                out.setText(emp.toString() + "
+Total Employees: " + Employee.getEmpCount());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        cancel.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+    public static void main(String[] args) { SwingUtilities.invokeLater(Main::new); }
+}
 
-# Coin Toss Simulation
-coin_tosses = np.random.choice(['H', 'T'], size=1000)
-
-heads = np.count_nonzero(coin_tosses == 'H')
-tails = np.count_nonzero(coin_tosses == 'T')
-
-print("Heads:", heads)
-print("Tails:", tails)
-
-# Poisson Distribution Simulation
-lam = 5
-
-data = np.random.poisson(lam, 1000)
-
-# Plot histogram
-plt.hist(data, bins=15, density=True)
-
-# Theoretical distribution
-x = np.arange(0, 15)
-
-plt.plot(x, poisson.pmf(x, lam))
-
-plt.title("Poisson Distribution")
-plt.xlabel("Events")
-plt.ylabel("Probability")
-
-plt.show()
 ```
 
 ---
 
-# 5. Dice Roll & Binomial Simulation
+## Q5. Library Management System
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import binom
+```java
+package com.library.system;
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+import java.util.*;
+class BookUnavailableException extends Exception {
+    public BookUnavailableException(String msg) { super(msg); }
+}
+class FineCalculationException extends Exception {
+    public FineCalculationException(String msg) { super(msg); }
+}
+interface Borrowable {
+    void issueBook(String memberId) throws BookUnavailableException;
+    void returnBook(String memberId, int daysLate) throws FineCalculationException;
+}
+class Book implements Borrowable {
+    private final String title, bookId;
+    private boolean available = true;
+    public static final double FINE_PER_DAY = 2.0;
+    public Book(String bookId, String title) {
+        this.bookId = bookId; this.title = title;
+    }
+    public String getBookId() { return bookId; }
+    public String getTitle() { return title; }
+    public boolean isAvailable() { return available; }
+    @Override
+    public void issueBook(String memberId) throws BookUnavailableException {
+        if (!available) throw new BookUnavailableException("Book '" + title + "' is not available.");
+        available = false;
+        System.out.println("Issued to " + memberId);
+    }
+    @Override
+    public void returnBook(String memberId, int daysLate) throws FineCalculationException {
+        if (daysLate &lt; 0) throw new FineCalculationException("Days late cannot be negative.");
+        available = true;
+        double fine = daysLate * FINE_PER_DAY;
+        System.out.println("Returned. Fine: Rs." + fine);
+    }
+    @Override public String toString() {
+        return "[" + bookId + "] " + title + " | " + (available ? "Available" : "Issued");
+    }
+}
+class Member {
+    private final String memberId, memberName;
+    private final List&lt;String&gt; borrowedBooks = new ArrayList&lt;&gt;();
+    public Member(String memberId, String memberName) {
+        if (memberId == null || memberId.isBlank()) throw new IllegalArgumentException("Member ID required.");
+        this.memberId = memberId; this.memberName = memberName;
+    }
+    public String getMemberId() { return memberId; }
+    public String getMemberName() { return memberName; }
+    public List&lt;String&gt; getBorrowedBooks() { return borrowedBooks; }
+}
+public class Main extends JFrame {
+    private JTextField bookIdF, titleF, memberIdF, memberNameF, daysF;
+    private JTextArea out;
+    private final Map&lt;String, Book&gt; books = new HashMap&lt;&gt;();
+    private final Map&lt;String, Member&gt; members = new HashMap&lt;&gt;();
+    public Main() {
+        super("Library Management System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(560, 540);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(6,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Library Operations"));
+        form.add(new JLabel("Book ID:")); bookIdF = new JTextField(); form.add(bookIdF);
+        form.add(new JLabel("Book Title:")); titleF = new JTextField(); form.add(titleF);
+        form.add(new JLabel("Member ID:")); memberIdF = new JTextField(); form.add(memberIdF);
+        form.add(new JLabel("Member Name:")); memberNameF = new JTextField(); form.add(memberNameF);
+        form.add(new JLabel("Days Late (return):")); daysF = new JTextField("0"); form.add(daysF);
+        JButton addBook = new JButton("Add Book");
+        JButton issue = new JButton("Issue");
+        JButton returnBtn = new JButton("Return");
+        JButton showBtn = new JButton("Show All Books");
+        JButton cancelBtn = new JButton("Cancel / Exit");
+        JPanel btnP = new JPanel();
+        btnP.add(addBook); btnP.add(issue); btnP.add(returnBtn); btnP.add(showBtn); btnP.add(cancelBtn);
+        out = new JTextArea(12,44);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnP, BorderLayout.SOUTH);
+        addBook.addActionListener(e -&gt; {
+            try {
+                books.put(bookIdF.getText().trim(), new Book(bookIdF.getText().trim(), titleF.getText().trim()));
+                out.append("Book added: " + titleF.getText().trim() + "
+");
+");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        issue.addActionListener(e -&gt; {
+            try {
+                Book b = books.get(bookIdF.getText().trim());
+                if (b == null) throw new BookUnavailableException("Book not found.");
+                b.issueBook(memberIdF.getText().trim());
+                out.append("Issued: " + b.getTitle() + " to " + memberIdF.getText().trim() + "
+            } catch (BookUnavailableException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        returnBtn.addActionListener(e -&gt; {
+            try {
+                Book b = books.get(bookIdF.getText().trim());
+                if (b == null) throw new FineCalculationException("Book not found.");
+                int days = Integer.parseInt(daysF.getText().trim());
+                b.returnBook(memberIdF.getText().trim(), days);
+                double fine = days * Book.FINE_PER_DAY;
+                out.append("Returned: " + b.getTitle() + " | Fine: Rs." + String.format("%.2f", fine) + "
+");
+");
+"));
+}
+            } catch (FineCalculationException | NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        showBtn.addActionListener(e -&gt; {
+            out.setText("-- All Books -
+            books.values().forEach(b -&gt; out.append(b + "
+        });
+        cancelBtn.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+    public static void main(String[] args) { SwingUtilities.invokeLater(Main::new); }
 
-# Dice Roll Simulation
-rolls = np.random.randint(1, 7, 1000)
-
-for i in range(1, 7):
-    print(f"{i} occurred {np.sum(rolls == i)} times")
-
-# Binomial Distribution Simulation
-n = 10
-p = 0.5
-
-binomial_data = np.random.binomial(n, p, 1000)
-
-# Histogram
-plt.hist(binomial_data, bins=10, density=True)
-
-# Theoretical probabilities
-x = np.arange(0, n + 1)
-
-plt.plot(x, binom.pmf(x, n, p))
-
-plt.title("Binomial Distribution")
-plt.xlabel("Successes")
-plt.ylabel("Probability")
-
-plt.show()
 ```
 
 ---
 
-# 6. Sampling Techniques using Python
+## Q6. Banking System with Transaction History
 
-```python
-import numpy as np
-import pandas as pd
-
-np.random.seed(125)
-
-civil = np.random.normal(6.8, 0.8, 1000)
-mech = np.random.normal(7.1, 0.7, 2000)
-entc = np.random.normal(7.5, 0.6, 3000)
-comp = np.random.normal(8.0, 0.5, 4000)
-
-# Combine all data
-gpa = np.concatenate([civil, mech, entc, comp])
-
-dept = (["CIVIL"] * 1000 +
-        ["MECH"] * 2000 +
-        ["ENTC"] * 3000 +
-        ["COMP"] * 4000)
-
-df = pd.DataFrame({"Dept": dept, "GPA": gpa})
-
-# Random Sampling
-random_sample = df.sample(1000)
-
-print("Random Sample Mean:", random_sample["GPA"].mean())
-
-# Stratified Sampling
-civil_s = df[df["Dept"] == "CIVIL"].sample(100)
-mech_s = df[df["Dept"] == "MECH"].sample(200)
-entc_s = df[df["Dept"] == "ENTC"].sample(300)
-comp_s = df[df["Dept"] == "COMP"].sample(400)
-
-strat_sample = pd.concat([civil_s, mech_s, entc_s, comp_s])
-
-print("Stratified Sample Mean:", strat_sample["GPA"].mean())
+```java
+package com.bank.accounts;
+import javax.swing.*;
+import java.awt.*;
+import java.sql.*;
+import java.util.*;
+interface Transactable {
+    void deposit(double amount);
+    void withdraw(double amount);
+    double getBalance();
+}
+class Transaction {
+    private final String type;
+    private final double amount;
+    private final double balanceAfter;
+    private static final Set&lt;String&gt; txIds = new HashSet&lt;&gt;();
+    public Transaction(String txId, String type, double amount, double balanceAfter) {
+        if (!txIds.add(txId)) throw new IllegalArgumentException("Duplicate transaction: " + txId);
+        this.type = type; this.amount = amount; this.balanceAfter = balanceAfter;
+    }
+    @Override public String toString() {
+        return type + " Rs." + String.format("%.2f", amount)
+               + " | Balance: Rs." + String.format("%.2f", balanceAfter);
+    }
+}
+class Account implements Transactable {
+    protected String accountNumber;
+    protected double balance;
+    protected final List&lt;Transaction&gt; history = new ArrayList&lt;&gt;();
+    private static int txCounter = 0;
+    public Account(String accountNumber, double initialBalance) {
+        this.accountNumber = accountNumber; this.balance = initialBalance;
+    }
+    @Override public void deposit(double amount) {
+        if (amount &lt;= 0) throw new IllegalArgumentException("Deposit must be positive.");
+        balance += amount;
+        history.add(new Transaction("TX" + (++txCounter), "DEPOSIT", amount, balance));
+    }
+    @Override public void withdraw(double amount) {
+        if (amount &lt;= 0) throw new IllegalArgumentException("Withdrawal must be positive.");
+        if (amount &gt; balance) throw new IllegalStateException("Insufficient balance.");
+        balance -= amount;
+        history.add(new Transaction("TX" + (++txCounter), "WITHDRAW", amount, balance));
+    }
+    @Override public double getBalance() { return balance; }
+    public String getHistory() {
+        StringBuilder sb = new StringBuilder("Account: " + accountNumber + "
+");
+"));
+        history.forEach(t -&gt; sb.append(t).append("
+        sb.append("Current Balance: Rs.").append(String.format("%.2f", balance));
+        return sb.toString();
+    }
+}
+class SavingsAccount extends Account {
+    private final double interestRate;
+    public SavingsAccount(String accountNumber, double balance, double interestRate) {
+        super(accountNumber, balance);
+        this.interestRate = interestRate;
+    }
+    public double applyInterest() {
+        double interest = balance * interestRate / 100;
+        balance += interest;
+        return interest;
+    }
+}
+public class Main extends JFrame {
+    private JTextField accF, amtF;
+    private JTextArea out;
+    private Account account;
+    public Main() {
+        super("Banking System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(500, 460);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(3,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Banking Operations"));
+        form.add(new JLabel("Account No:")); accF = new JTextField("ACC001"); form.add(accF);
+        form.add(new JLabel("Amount (Rs):")); amtF = new JTextField(); form.add(amtF);
+        JButton depositBtn = new JButton("Deposit");
+        JButton withdrawBtn = new JButton("Withdraw");
+        JButton histBtn = new JButton("History");
+        JButton exitBtn = new JButton("Cancel / Exit");
+        form.add(depositBtn); form.add(withdrawBtn);
+        account = new SavingsAccount("ACC001", 5000.0, 4.5);
+        out = new JTextArea(13,40);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JPanel btnP = new JPanel(); btnP.add(histBtn); btnP.add(exitBtn);
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnP, BorderLayout.SOUTH);
+        depositBtn.addActionListener(e -&gt; {
+            try {
+                account.deposit(Double.parseDouble(amtF.getText().trim()));
+                out.append("Deposited successfully.
+");
+");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        withdrawBtn.addActionListener(e -&gt; {
+            try {
+                account.withdraw(Double.parseDouble(amtF.getText().trim()));
+                out.append("Withdrawn successfully.
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        histBtn.addActionListener(e -&gt; out.setText(account.getHistory()));
+        exitBtn.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null);
+        setVisible(true);
+    }
+    public static void main(String[] args) { SwingUtilities.invokeLater(Main::new); }
+}
+Note: JDBC: Create the DB table manually. For Q1: CREATE TABLE students(name VARCHAR(50), roll_no INT, gpa
+DOUBLE, attendance INT); Update DB URL/credentials in the code
 ```
 
 ---
 
-# 7. Hypothesis Testing (Z-Test for Mean)
+## Q7. Vehicle Rental System
 
-```python
-import numpy as np
-from scipy.stats import norm
+```java
+package com.rental.vehicles;
+import javax.swing.*;
+import java.awt.*;
+interface Rentable {
+    double calculateRent(int days);
+}
+abstract class Vehicle implements Rentable {
+    protected final String vehicleId, brand;
+    protected boolean available;
+    public Vehicle(String vehicleId, String brand) {
+        this.vehicleId = vehicleId; this.brand = brand; this.available = true;
+    }
+    public boolean isAvailable() { return available; }
+    public void rent() {
+        if (!available) throw new IllegalStateException("Vehicle " + vehicleId + " is unavailable.");
+        available = false;
+    }
+    public void returnVehicle() { available = true; }
+    @Override public String toString() {
+        return brand + " [" + vehicleId + "] " + (available ? "Available" : "Rented");
+    }
+}
+class Car extends Vehicle {
+    private static final double RATE_PER_DAY = 1500.0;
+    public Car(String id, String brand) { super(id, brand); }
+    @Override public double calculateRent(int days) {
+        if (days &lt;= 0) throw new IllegalArgumentException("Rental duration must be positive.");
+        return days * RATE_PER_DAY;
+    }
+}
+class Bike extends Vehicle {
+    private static final double RATE_PER_DAY = 500.0;
+    public Bike(String id, String brand) { super(id, brand); }
+    @Override public double calculateRent(int days) {
+        if (days &lt;= 0) throw new IllegalArgumentException("Rental duration must be positive.");
+        return days * RATE_PER_DAY;
+    }
+}
+public class Main extends JFrame {
+    private JTextField idF, brandF, daysF;
+    private JComboBox&lt;String&gt; typeCombo;
+    private JTextArea out;
+    private final java.util.List&lt;Vehicle&gt; fleet = new java.util.ArrayList&lt;&gt;();
+    public Main() {
+        super("Vehicle Rental System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(520, 440);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(5,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Rent a Vehicle"));
+        form.add(new JLabel("Vehicle ID:")); idF = new JTextField(); form.add(idF);
+        form.add(new JLabel("Brand:")); brandF = new JTextField(); form.add(brandF);
+        form.add(new JLabel("Type:"));
+        typeCombo = new JComboBox&lt;&gt;(new String[]{"Car","Bike"}); form.add(typeCombo);
+        form.add(new JLabel("Rental Days:")); daysF = new JTextField(); form.add(daysF);
+        JButton addBtn = new JButton("Add to Fleet");
+        JButton rentBtn = new JButton("Rent");
+        JButton retBtn = new JButton("Return");
+        JButton showBtn = new JButton("Show Fleet");
+        JButton exitBtn = new JButton("Cancel / Exit");
+        form.add(addBtn); form.add(rentBtn);
+        out = new JTextArea(11,42);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JPanel btnP = new JPanel(); btnP.add(retBtn); btnP.add(showBtn); btnP.add(exitBtn);
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnP, BorderLayout.SOUTH);
+        addBtn.addActionListener(e -&gt; {
+            try {
+                Vehicle v = "Car".equals(typeCombo.getSelectedItem())
+                        ? new Car(idF.getText().trim(), brandF.getText().trim())
+                        : new Bike(idF.getText().trim(), brandF.getText().trim());
+                fleet.add(v); out.append("Added: " + v + "
+");
+");
+null);
+"); }
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, ex.getMessage()); }
+        });
+        rentBtn.addActionListener(e -&gt; {
+            try {
+                int days = Integer.parseInt(daysF.getText().trim());
+                Vehicle v = fleet.stream().filter(x -&gt; x.vehicleId.equals(idF.getText().trim())).findFirst()
+                        .orElseThrow(() -&gt; new IllegalArgumentException("Vehicle not found."));
+                v.rent();
+                out.append("Rent for " + days + " days: Rs." + String.format("%.2f", v.calculateRent(days)) + "
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, ex.getMessage()); }
+        });
+        retBtn.addActionListener(e -&gt; {
+            Vehicle v = fleet.stream().filter(x -&gt; x.vehicleId.equals(idF.getText().trim())).findFirst().orElse(
+            if (v != null) { v.returnVehicle(); out.append("Vehicle returned.
+        });
+        showBtn.addActionListener(e -&gt; {
+            out.setText("-- Fleet -
+"); fleet.forEach(v -&gt; out.append(v + "
+"));
+        });
+        exitBtn.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null); setVisible(true);
+    }
+    public static void main(String[] args) { SwingUtilities.invokeLater(Main::new); }
+}```
 
-# Sample data
-sample = np.array([52, 55, 51, 54, 53, 52, 50, 51])
+---
 
-n = len(sample)
+## Q8. Inventory Management System
 
-mu0 = 50
-sigma = 3
-alpha = 0.05
-
-x_bar = np.mean(sample)
-
-Z = (x_bar - mu0) / (sigma / np.sqrt(n))
-
-p_value = 2 * (1 - norm.cdf(abs(Z)))
-
-print("Z statistic:", round(Z, 4))
-print("p-value:", round(p_value, 6))
+```java
+package com.inventory.stock;
+import javax.swing.*;
+import java.awt.*;
+import java.util.*;
+interface Storable {
+    void addItem(Item item);
+    void removeItem(String itemCode);
+    int getStock(String itemCode);
+}
+class Item {
+    private final String itemCode, itemName;
+    private int quantity;
+    private static final int REORDER_LEVEL = 5;
+    public Item(String itemCode, String itemName, int quantity) {
+        if (itemCode == null || itemCode.isBlank())
+            throw new NullPointerException("Item code cannot be null/empty.");
+        if (quantity &lt; 0) throw new IllegalArgumentException("Quantity cannot be negative.");
+        this.itemCode = itemCode; this.itemName = itemName; this.quantity = quantity;
+    }
+    public String getItemCode() { return itemCode; }
+    public String getItemName() { return itemName; }
+    public int getQuantity() { return quantity; }
+    public void reduceStock(int qty) {
+        if (qty &gt; quantity) throw new IllegalStateException("Stock underflow for " + itemCode);
+        quantity -= qty;
+    }
+    public boolean needsReorder() { return quantity &lt;= REORDER_LEVEL; }
+    @Override public String toString() {
+        return "[" + itemCode + "] " + itemName + " | Qty: " + quantity
+               + (needsReorder() ? " *** REORDER ALERT ***" : "");
+    }
+}
+class Warehouse implements Storable {
+    private final Map&lt;String, Item&gt; inventory = new HashMap&lt;&gt;();
+    @Override public void addItem(Item item) {
+        if (inventory.containsKey(item.getItemCode()))
+            throw new IllegalArgumentException("Duplicate item code: " + item.getItemCode());
+        inventory.put(item.getItemCode(), item);
+    }
+    @Override public void removeItem(String code) {
+        if (!inventory.containsKey(code))
+            throw new NoSuchElementException("Item not found: " + code);
+        inventory.remove(code);
+    }
+    @Override public int getStock(String code) {
+        Item item = inventory.get(code);
+        if (item == null) throw new NoSuchElementException("Item not found: " + code);
+        return item.getQuantity();
+    }
+    public Collection&lt;Item&gt; allItems() { return inventory.values(); }
+}
+public class Main extends JFrame {
+    private JTextField codeF, nameF, qtyF;
+    private JTextArea out;
+    private final Warehouse wh = new Warehouse();
+    public Main() {
+        super("Inventory Management System");
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setSize(520,440);
+        setLayout(new BorderLayout(8,8));
+        JPanel form = new JPanel(new GridLayout(4,2,6,6));
+        form.setBorder(BorderFactory.createTitledBorder("Inventory"));
+        form.add(new JLabel("Item Code:")); codeF = new JTextField(); form.add(codeF);
+        form.add(new JLabel("Item Name:")); nameF = new JTextField(); form.add(nameF);
+        form.add(new JLabel("Quantity:")); qtyF = new JTextField(); form.add(qtyF);
+        JButton addBtn = new JButton("Add Item");
+        JButton removeBtn = new JButton("Remove Item");
+        JButton showBtn = new JButton("Show All");
+        JButton exitBtn = new JButton("Cancel / Exit");
+        form.add(addBtn); form.add(removeBtn);
+        out = new JTextArea(11,42);
+        out.setEditable(false);
+        out.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JPanel btnP = new JPanel(); btnP.add(showBtn); btnP.add(exitBtn);
+        add(form, BorderLayout.NORTH);
+        add(new JScrollPane(out), BorderLayout.CENTER);
+        add(btnP, BorderLayout.SOUTH);
+        addBtn.addActionListener(e -&gt; {
+            try {
+                wh.addItem(new Item(codeF.getText().trim(), nameF.getText().trim(),
+                        Integer.parseInt(qtyF.getText().trim())));
+                out.append("Item added.
+");
+"); }
+            } catch (Exception ex) { JOptionPane.showMessageDialog(this, ex.getMessage()); }
+        });
+        removeBtn.addActionListener(e -&gt; {
+            try { wh.removeItem(codeF.getText().trim()); out.append("Item removed.
+            catch (Exception ex) { JOptionPane.showMessageDialog(this, ex.getMessage()); }
+        });
+        showBtn.addActionListener(e -&gt; {
+            out.setText("-- Inventory -
+"); wh.allItems().forEach(i -&gt; out.append(i + "
+"));
+        });
+        exitBtn.addActionListener(e -&gt; System.exit(0));
+        setLocationRelativeTo(null); setVisible(true);
+    }
+    public static void main(String[] args) { SwingUtilities.invokeLater(Main::new); }
+}
 ```
 
 ---
 
-# 8. Hypothesis Testing (t-Test)
+## Q9. Hospital Appointment Booking System
 
-```python
-import numpy as np
-from scipy.stats import t
-
-x_bar = 4.6
-mu0 = 5
-s = 1.2
-n = 20
-alpha = 0.05
-
-t_stat = (x_bar - mu0) / (s / np.sqrt(n))
-
-df = n - 1
-
-p_value = t.cdf(t_stat, df)
-
-print("t statistic:", round(t_stat, 4))
-print("p-value:", round(p_value, 4))
+```java
+// Paste Q9 Java code here
 ```
 
 ---
 
-# 9. Chi-Square Test of Independence
+## Q10. Smart Home Device Control System
 
-```python
-import numpy as np
-from scipy.stats import chi2_contingency
-
-# Observed data
-data = np.array([[30, 10],
-                 [370, 590]])
-
-chi2, p, dof, expected = chi2_contingency(data)
-
-print("Chi-square:", chi2)
-print("p-value:", p)
-print("Degrees of freedom:", dof)
-
-print("Expected frequencies:\n", expected)
+```java
+// Paste Q10 Java code here
 ```
 
 ---
 
-# 10. Simple Linear Regression
+## Q11. Airline Ticketing System
 
-```python
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
-
-X = np.array([27, 20, 32, 25, 35, 22]).reshape(-1, 1)
-
-Y = np.array([2600, 2100, 3050, 2550, 3390, 2250])
-
-model = LinearRegression()
-
-model.fit(X, Y)
-
-Y_pred = model.predict(X)
-
-plt.scatter(X, Y)
-plt.plot(X, Y_pred)
-
-plt.show()
-
-print("Intercept:", model.intercept_)
-print("Slope:", model.coef_[0])
-
-r2 = r2_score(Y, Y_pred)
-
-print("R² Score:", r2)
+```java
+// Paste Q11 Java code here
 ```
 
 ---
 
-# 11. Directional Derivative using Python
+## Q12. Online Quiz Management System
 
-```python
-import numpy as np
-
-# Function gradient
-def gradient(x, y):
-
-    df_dx = 2*x
-    df_dy = 2*y
-
-    return np.array([df_dx, df_dy])
-
-# Directional derivative
-def directional_derivative(x, y, direction):
-
-    grad = gradient(x, y)
-
-    u = direction / np.linalg.norm(direction)
-
-    return np.dot(grad, u)
-
-point = (1, 2)
-
-direction = np.array([3, 4])
-
-result = directional_derivative(point[0], point[1], direction)
-
-print("Directional Derivative:", result)
+```java
+// Paste Q12 Java code here
 ```
 
 ---
 
-# 12. Gradient Descent Algorithm
+## Q13. Customer Feedback and Rating System
 
-```python
-import numpy as np
-import matplotlib.pyplot as plt
-
-# Define function
-def f(x, y):
-    return x**2 + y**2
-
-# Gradient
-def grad(x, y):
-
-    df_dx = 2*x
-    df_dy = 2*y
-
-    return np.array([df_dx, df_dy])
-
-# Gradient Descent
-def gradient_descent(start, lr=0.1, steps=30):
-
-    path = [start]
-
-    current = np.array(start, dtype=float)
-
-    for _ in range(steps):
-
-        g = grad(current[0], current[1])
-
-        current = current - lr * g
-
-        path.append(current.copy())
-
-    return np.array(path)
-
-start = [4, 4]
-
-path = gradient_descent(start)
-
-x_vals = np.linspace(-5, 5, 100)
-y_vals = np.linspace(-5, 5, 100)
-
-X, Y = np.meshgrid(x_vals, y_vals)
-
-Z = f(X, Y)
-
-plt.figure()
-
-plt.contour(X, Y, Z, levels=20)
-
-plt.plot(path[:,0], path[:,1], marker='o')
-
-plt.title("Gradient Descent")
-
-plt.xlabel("x")
-plt.ylabel("y")
-
-plt.show()
+```java
+// Paste Q13 Java code here
 ```
 
-# Hypothesis Testing (Z-Test for Proportion)
+---
 
-```python
-import numpy as np
-from scipy.stats import norm
+## Q14. Food Delivery App Simulation
 
-# Sample data
-n = 500                 # sample size
-x = 320                 # satisfied customers
-
-# Sample proportion
-p_hat = x / n
-
-# Hypothesized population proportion
-p0 = 0.55
-
-# Significance level
-alpha = 0.05
-
-# Z-test statistic
-Z = (p_hat - p0) / np.sqrt((p0 * (1 - p0)) / n)
-
-# Two-tailed p-value
-p_value = 2 * (1 - norm.cdf(abs(Z)))
-
-# Critical value
-z_critical = norm.ppf(1 - alpha/2)
-
-# Output
-print("Sample Proportion:", round(p_hat, 4))
-print("Z statistic:", round(Z, 4))
-print("p-value:", round(p_value, 6))
-print("Critical value:", round(z_critical, 2))
-
-# Decision using critical value
-if abs(Z) > z_critical:
-    print("Reject H0")
-else:
-    print("Fail to reject H0")
-
-# Decision using p-value
-if p_value < alpha:
-    print("Reject H0")
-else:
-    print("Fail to reject H0")
+```java
+// Paste Q14 Java code here
 ```
 
+---
+
+## Q15. Parcel Tracking System
+
+```java
+// Paste Q15 Java code here
+```
+
+---
+
+## Q16. Electricity Bill Generator
+
+```java
+// Paste Q16 Java code here
+```
+
+---
+
+## Q17. Event Management System
+
+```java
+// Paste Q17 Java code here
+```
+
+---
+
+## Q18. Hotel Room Booking System
+
+```java
+// Paste Q18 Java code here
+```
+
+---
+
+## Q19. Loan Eligibility Checker
+
+```java
+// Paste Q19 Java code here
+```
+
+---
+
+## Q20. Weather Forecasting Application
+
+```java
+// Paste Q20 Java code here
+```
